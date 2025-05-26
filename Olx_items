@@ -1,0 +1,33 @@
+import requests, csv
+from bs4 import BeautifulSoup
+
+u = "https://www.olx.in/items/q-car-cover"
+h = {"User-Agent": "Mozilla/5.0"}
+r = requests.get(u, headers=h)
+
+if r.status_code == 200:
+    s = BeautifulSoup(r.text, "html.parser")
+    l = s.find("ul", {"data-aut-id": "itemsList1"})
+    if l:
+        out = []
+        for i in l.find_all("li"):
+            t = i.find("span", {"data-aut-id": "itemTitle"})
+            p = i.find("span", {"data-aut-id": "itemPrice"})
+            loc = i.find("span", {"data-aut-id": "item-location"})
+            a = i.find("a")
+            if not (t and p and loc and a): continue
+            out.append([
+                t.text.strip(),
+                p.text.strip(),
+                loc.text.strip(),
+                "https://www.olx.in" + a.get("href", "")
+            ])
+        with open("out.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["Title", "Price", "Location", "Link"])
+            w.writerows(out)
+        print("Done.")
+    else:
+        print("Nothing found.")
+else:
+    print("Error:", r.status_code)
